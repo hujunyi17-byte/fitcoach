@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 // Vercel Serverless Function：/api/chat
 // 环境变量在 Vercel 后台配置（不要加 VITE_ 前缀）：AI_API_KEY、AI_BASE_URL、AI_MODEL
 
