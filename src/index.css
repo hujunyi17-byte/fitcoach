@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 主色调（预留：用户自定义主色，见 ThemeProvider.setPrimaryColor） */
+    --color-primary: 16 185 129; /* #10b981 品牌绿 */
+
+    /* 明亮主题（浅色玻璃） */
+    --color-bg: 241 245 249;              /* slate-100 */
+    --color-surface: rgba(255, 255, 255, 0.72);
+    --color-text: 15 23 42;               /* slate-900 */
+    --color-text-muted: 100 116 139;      /* slate-500 */
+    --color-border: 148 163 184;          /* slate-400 */
+    --bg-gradient: linear-gradient(160deg, #e0e7ff 0%, #f1f5f9 45%, #cffafe 100%);
+    --bg-scrim: rgba(248, 250, 252, 0.8);
+  }
+
+  .dark {
+    /* 暗黑主题（玻璃拟态） */
+    --color-bg: 15 23 42;                 /* slate-900 */
+    --color-surface: rgba(255, 255, 255, 0.06);
+    --color-text: 241 245 249;            /* slate-100 */
+    --color-text-muted: 148 163 184;      /* slate-400 */
+    --color-border: 71 85 105;            /* slate-600 */
+    --bg-gradient: linear-gradient(160deg, #0b1020 0%, #1e1b4b 45%, #0c4a6e 100%);
+    --bg-scrim: rgba(15, 23, 42, 0.82);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg-gradient);
+    color: rgb(var(--color-text));
+    font-family:
+      'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB',
+      'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+  }
+
+  button,
+  [role='button'],
+  input {
+    touch-action: manipulation;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+/* 玻璃拟态：所有 surface 元素加磨砂模糊 */
+.bg-surface {
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
