@@ -13,7 +13,7 @@ export default function PhotoWall({ onBack }: { onBack: () => void }) {
   async function handleFile(file: File) {
     setUploading(true)
     try {
-      const dataUrl = await fileToDataUrl(file, 1024)
+      const dataUrl = await fileToDataUrl(file, 512, 0.5)
       await db.dailyPhotos.put({
         dateStr: todayStr(),
         photoBase64: dataUrl,

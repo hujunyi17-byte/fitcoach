@@ -101,7 +101,7 @@ export default function Diet() {
     if (!file) return
     setMessage(null)
     try {
-      setImage(await fileToDataUrl(file, 1024))
+      setImage(await fileToDataUrl(file, 512, 0.5))
     } catch {
       setMessage('图片处理失败，请重试')
     }

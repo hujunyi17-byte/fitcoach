@@ -67,9 +67,13 @@ export async function runVideoDiagnosis(
     minTrackingConfidence: 0.5,
   })
 
+  // 压缩到最大 512px，避免大图导致 AI 处理过慢 / 超时
+  const vw = video.videoWidth || 640
+  const vh = video.videoHeight || 480
+  const scale = Math.min(1, 512 / Math.max(vw, vh))
   const canvas = document.createElement('canvas')
-  canvas.width = video.videoWidth || 640
-  canvas.height = video.videoHeight || 480
+  canvas.width = Math.round(vw * scale)
+  canvas.height = Math.round(vh * scale)
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('无法创建画布')
 
@@ -104,16 +108,16 @@ export async function runVideoDiagnosis(
       hip = hipAngle(lm)
     }
 
-    if (i === midIndex) midFrame = canvas.toDataURL('image/jpeg', 0.8)
+    if (i === midIndex) midFrame = canvas.toDataURL('image/jpeg', 0.5)
 
     if (knee != null && knee < minKnee) {
       minKnee = knee
-      minKneeFrame = canvas.toDataURL('image/jpeg', 0.8)
+      minKneeFrame = canvas.toDataURL('image/jpeg', 0.5)
       minKneeHip = hip
     }
     if (knee != null && knee > maxKnee) {
       maxKnee = knee
-      maxKneeFrame = canvas.toDataURL('image/jpeg', 0.8)
+      maxKneeFrame = canvas.toDataURL('image/jpeg', 0.5)
     }
 
     onProgress(Math.round(((i + 1) / timestamps.length) * 100))

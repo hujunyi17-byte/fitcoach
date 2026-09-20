@@ -117,6 +117,7 @@ export function parsePlan(text: string): Plan | null {
 
 /** 流式请求后端代理，逐段回调 delta（打字机效果） */
 const MAX_IMAGE_CHARS = 5 * 1024 * 1024 // 约 5MB
+const AI_TIMEOUT_MS = 15_000 // 15 秒超时
 
 export async function streamChat(
   messages: ChatMessage[],
@@ -127,47 +128,60 @@ export async function streamChat(
     throw new Error('图片体积过大，请裁剪后重新上传')
   }
   const context = await buildTrainingContext()
-  const res = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ context, messages, images }),
-  })
 
-  if (!res.ok || !res.body) {
-    let msg = `请求失败（${res.status}）`
-    try {
-      const err = await res.json()
-      if (err?.error) msg = err.error
-    } catch {
-      /* ignore */
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context, messages, images }),
+      signal: controller.signal,
+    })
+
+    if (!res.ok || !res.body) {
+      let msg = `请求失败（${res.status}）`
+      try {
+        const err = await res.json()
+        if (err?.error) msg = err.error
+      } catch {
+        /* ignore */
+      }
+      throw new Error(msg)
     }
-    throw new Error(msg)
-  }
 
-  const reader = res.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    const events = buffer.split('\n\n')
-    buffer = events.pop() ?? ''
-    for (const event of events) {
-      for (const line of event.split('\n')) {
-        if (!line.startsWith('data:')) continue
-        const payload = line.slice(5).trim()
-        if (payload === '[DONE]') return
-        let json: { delta?: string; error?: string }
-        try {
-          json = JSON.parse(payload)
-        } catch {
-          continue
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const events = buffer.split('\n\n')
+      buffer = events.pop() ?? ''
+      for (const event of events) {
+        for (const line of event.split('\n')) {
+          if (!line.startsWith('data:')) continue
+          const payload = line.slice(5).trim()
+          if (payload === '[DONE]') return
+          let json: { delta?: string; error?: string }
+          try {
+            json = JSON.parse(payload)
+          } catch {
+            continue
+          }
+          if (json?.error) throw new Error(json.error)
+          if (typeof json?.delta === 'string') onDelta(json.delta)
         }
-        if (json?.error) throw new Error(json.error)
-        if (typeof json?.delta === 'string') onDelta(json.delta)
       }
     }
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('AI 思考时间过长，请尝试上传更小的图片或文字提问')
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
   }
 }
